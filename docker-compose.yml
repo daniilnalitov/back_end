@@ -1,0 +1,50 @@
+version: '3.8'
+
+volumes:
+  db:
+
+services:
+  db:
+    image: postgres:latest
+    container_name: lab_db
+    restart: always
+    env_file: ./dev.env
+    volumes:
+      - db:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+  web:
+    image: lab/web
+    build:
+      context: ./server
+    container_name: lab_web
+    restart: always
+    depends_on:
+      - db
+    env_file: ./dev.env
+    environment:
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+      - ALLOWED_HOSTS=0.0.0.0;127.0.0.1;localhost
+      - SECRET_KEY=PUT_YOUR_SECRETE_HERE
+      - DEBUG=1
+    ports:
+      - 81:8000
+  frontend:
+      image: lab/frontend
+      build:
+        context: ./client
+      container_name: lab_frontend
+      restart: always
+  nginx:
+    image: lab/nginx
+    build:
+      context: ./nginx
+    container_name: lab_nginx
+    restart: always
+    depends_on:
+      - web
+      - frontend
+    ports:
+      - 85:80
